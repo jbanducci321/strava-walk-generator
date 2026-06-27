@@ -26,8 +26,9 @@ router.post('/gpx', async (req, res) => {
         // Log the export to the database
         try {
             const distanceKm = req.body.distance_km || null;
-            const avgSpeed = distanceKm
-                ? ((distanceKm / (parseInt(duration_seconds) / 3600)).toFixed(2))
+            const distanceMi = distanceKm ? distanceKm * 0.621371 : null;
+            const avgSpeed = distanceMi
+                ? (distanceMi / (parseInt(duration_seconds) / 3600)).toFixed(2)
                 : null;
 
             await pool.query(`

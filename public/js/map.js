@@ -103,8 +103,10 @@ async function snapToRoads() {
         map.fitBounds(routePolyline.getBounds(), { padding: [30, 30] });
 
         // Show distance and activity form
+        const distanceMi = (currentDistanceKm * 0.621371).toFixed(2);
         document.getElementById('distanceDisplay').classList.remove('d-none');
-        document.getElementById('distanceBadge').textContent = `${currentDistanceKm.toFixed(2)} km`;
+        document.getElementById('distanceBadge').textContent = `${distanceMi} mi`;
+        document.getElementById('distanceBadgeKm').textContent = `${currentDistanceKm.toFixed(2)} km`;
         document.getElementById('activityForm').classList.remove('d-none');
 
         setStatus('Route snapped successfully!', 'text-success');
@@ -286,8 +288,10 @@ async function loadRoute(id) {
 
         document.getElementById('activityName').value = route.name;
         document.getElementById('sportType').value = route.sport_type;
+        const loadedMi = (currentDistanceKm * 0.621371).toFixed(2);
         document.getElementById('distanceDisplay').classList.remove('d-none');
-        document.getElementById('distanceBadge').textContent = `${currentDistanceKm.toFixed(2)} km`;
+        document.getElementById('distanceBadge').textContent = `${loadedMi} mi`;
+        document.getElementById('distanceBadgeKm').textContent = `${currentDistanceKm.toFixed(2)} km`;
         document.getElementById('activityForm').classList.remove('d-none');
 
         setStatus(`Loaded: ${route.name}`, 'text-success');

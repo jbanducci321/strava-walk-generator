@@ -19,9 +19,9 @@ app.use((req, res, next) => {
 
     if (authHeader) {
         const base64 = authHeader.split(' ')[1];
-        const [, password] = Buffer.from(base64, 'base64').toString().split(':');
+        const [username, password] = Buffer.from(base64, 'base64').toString().split(':');
 
-        if (password === process.env.APP_PASSWORD) {
+        if (username === process.env.APP_USERNAME && password === process.env.APP_PASSWORD) {
             return next();
         }
     }
