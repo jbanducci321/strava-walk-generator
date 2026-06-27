@@ -300,6 +300,93 @@ async function loadRoute(id) {
     }
 }
 
+// Upload activity directly to Strava
+async function uploadToStrava() {
+    const coords = snappedCoords.length ? snappedCoords : drawnPoints;
+
+    if (!coords.length) {
+        setStatus('No route to upload', 'text-danger');
+        return;
+    }
+
+    const name = document.getElementById('activityName').value.trim() || 'My Walk';
+    const sportType = document.getElementById('sportType').value;
+    const startTime = document.getElementById('startTime').value;
+
+    const hours = parseInt(document.getElementById('durationHours').value) || 0;
+    const minutes = parseInt(document.getElementById('durationMinutes').value) || 0;
+    const seconds = parseInt(document.getElementById('durationSeconds').value) || 0;
+    const durationSeconds = (hours * 3600) + (minutes * 60) + seconds;
+
+    if (!startTime) {
+        setStatus('Please enter a start date and time', 'text-danger');
+        return;
+    }
+
+    if (durationSeconds <= 0) {
+        setStatus('Please enter a duration greater than 0', 'text-danger');
+        return;
+    }
+
+    setStatus('Uploading to Strava...', 'text-muted');
+    document.getElementById('uploadStravaBtn').disabled = true;
+
+    try {
+        const res = await fetch('/api/download/upload-strava', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                coordinates: coords,
+                name,
+                sport_type: sportType,
+                start_time: new Date(startTime).toISOString(),
+                duration_seconds: durationSeconds,
+                distance_km: currentDistanceKm,
+                route_id: savedRouteId
+            })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            setStatus(data.error || 'Upload failed', 'text-danger');
+            document.getElementById('uploadStravaBtn').disabled = false;
+            return;
+        }
+
+        if (data.strava_url) {
+            setStatus('Uploaded! Opening activity...', 'text-success');
+            window.open(data.strava_url, '_blank');
+        } else {
+            setStatus('Uploaded to Strava (still processing)', 'text-success');
+        }
+    } catch (err) {
+        setStatus('Upload request failed', 'text-danger');
+    }
+
+    document.getElementById('uploadStravaBtn').disabled = false;
+}
+
+// Check Strava connection status and update UI
+async function checkStravaStatus() {
+    try {
+        const res = await fetch('/auth/status');
+        const data = await res.json();
+
+        if (data.connected) {
+            document.getElementById('stravaConnected').classList.remove('d-none');
+            document.getElementById('stravaDisconnected').classList.add('d-none');
+            document.getElementById('uploadStravaBtn').classList.remove('d-none');
+        } else {
+            document.getElementById('stravaConnected').classList.add('d-none');
+            document.getElementById('stravaDisconnected').classList.remove('d-none');
+            document.getElementById('uploadStravaBtn').classList.add('d-none');
+        }
+    } catch (err) {
+        console.error('Failed to check Strava status:', err);
+    }
+}
+
 function setStatus(msg, cssClass) {
     const el = document.getElementById('statusMsg');
     el.className = cssClass;
@@ -315,6 +402,11 @@ document.getElementById('snapBtn').addEventListener('click', snapToRoads);
 document.getElementById('clearBtn').addEventListener('click', clearRoute);
 document.getElementById('saveRouteBtn').addEventListener('click', saveRoute);
 document.getElementById('downloadBtn').addEventListener('click', downloadGpx);
+document.getElementById('uploadStravaBtn').addEventListener('click', uploadToStrava);
+document.getElementById('disconnectBtn').addEventListener('click', async () => {
+    await fetch('/auth/disconnect', { method: 'POST' });
+    checkStravaStatus();
+});
 
 // Set default start time to now
 const now = new Date();
@@ -324,3 +416,4 @@ document.getElementById('startTime').value = now.toISOString().slice(0, 16);
 // Boot
 initMap();
 loadSavedRoutes();
+checkStravaStatus();

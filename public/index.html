@@ -23,6 +23,17 @@
         <div class="col-md-3 sidebar p-3">
             <h4 class="mb-3">Strava Walk Generator</h4>
 
+            <!-- Strava connection status -->
+            <div id="stravaStatus" class="mb-3">
+                <div id="stravaConnected" class="d-none alert alert-success py-1 px-2 small mb-1">
+                    Strava connected
+                    <button class="btn btn-sm btn-link text-danger p-0 ms-2" id="disconnectBtn">Disconnect</button>
+                </div>
+                <div id="stravaDisconnected" class="d-none">
+                    <a href="/auth/strava" class="btn btn-sm btn-outline-warning w-100">Connect Strava Account</a>
+                </div>
+            </div>
+
             <!-- Search -->
             <div class="mb-3">
                 <label class="form-label">Search Location</label>
@@ -90,7 +101,8 @@
 
                 <div class="mb-3">
                     <button class="btn btn-success w-100 mb-2" id="saveRouteBtn">Save Route</button>
-                    <button class="btn btn-primary w-100" id="downloadBtn">Download GPX</button>
+                    <button class="btn btn-primary w-100 mb-2" id="downloadBtn">Download GPX</button>
+                    <button class="btn btn-warning w-100 d-none" id="uploadStravaBtn">Upload to Strava</button>
                 </div>
             </div>
 

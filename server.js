@@ -5,6 +5,7 @@ const path = require('path');
 
 const activityRoutes = require('./routes/activity');
 const downloadRoutes = require('./routes/download');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,6 +35,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/activity', activityRoutes);
 app.use('/api/download', downloadRoutes);
+app.use('/auth', authRoutes);
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
