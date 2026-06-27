@@ -12,6 +12,24 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Basic auth password gate
+app.use((req, res, next) => {
+    const authHeader = req.headers['authorization'];
+
+    if (authHeader) {
+        const base64 = authHeader.split(' ')[1];
+        const [, password] = Buffer.from(base64, 'base64').toString().split(':');
+
+        if (password === process.env.APP_PASSWORD) {
+            return next();
+        }
+    }
+
+    res.set('WWW-Authenticate', 'Basic realm="Strava Walk Generator"');
+    res.status(401).send('Unauthorized');
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/activity', activityRoutes);
