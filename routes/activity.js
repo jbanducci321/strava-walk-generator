@@ -31,7 +31,7 @@ router.get('/geocode', async (req, res) => {
         res.json({ lat: parseFloat(lat), lon: parseFloat(lon), display_name });
     } catch (err) {
         console.error('Geocode error:', err.message);
-        res.status(500).json({ error: 'Geocoding failed' });
+        res.status(500).json({ error: 'Geocoding failed', detail: err.message });
     }
 });
 
@@ -70,7 +70,11 @@ router.post('/snap-route', async (req, res) => {
         });
     } catch (err) {
         console.error('Snap route error:', err.response?.data || err.message);
-        res.status(500).json({ error: 'Route snapping failed' });
+        res.status(500).json({
+            error: 'Route snapping failed',
+            detail: err.response?.data?.error?.message || err.message,
+            ors_key_present: !!process.env.ORS_API_KEY
+        });
     }
 });
 
