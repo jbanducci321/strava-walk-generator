@@ -1,0 +1,2 @@
+# strava-walk-generator
+
