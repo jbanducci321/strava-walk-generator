@@ -1,0 +1,34 @@
+{
+  "name": "strava-walk-generator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jbanducci321/strava-walk-generator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/jbanducci321/strava-walk-generator/issues"
+  },
+  "homepage": "https://github.com/jbanducci321/strava-walk-generator#readme",
+  "dependencies": {
+    "axios": "^1.18.1",
+    "bootstrap": "^5.3.8",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "ejs": "^6.0.1",
+    "express": "^5.2.1",
+    "fetch": "^1.1.0",
+    "mysql2": "^3.22.5",
+    "node": "^26.4.0",
+    "node-fetch": "^3.3.2"
+  }
+}
