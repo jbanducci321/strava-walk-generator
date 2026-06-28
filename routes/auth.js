@@ -3,6 +3,25 @@ const axios = require('axios');
 const router = express.Router();
 const { saveTokens, getTokens } = require('../utils/strava');
 
+// Temporary: show the OAuth URL instead of redirecting so we can verify it
+router.get('/strava-debug', (req, res) => {
+    const redirectUri = process.env.STRAVA_REDIRECT_URI ||
+        `${req.protocol}://${req.get('host')}/auth/callback`;
+
+    const params = new URLSearchParams({
+        client_id: process.env.STRAVA_CLIENT_ID,
+        response_type: 'code',
+        redirect_uri: redirectUri,
+        approval_prompt: 'auto',
+        scope: 'activity:write,read'
+    });
+
+    res.json({
+        redirect_uri_being_sent: redirectUri,
+        full_oauth_url: `https://www.strava.com/oauth/authorize?${params}`
+    });
+});
+
 // Redirect user to Strava to authorize
 router.get('/strava', (req, res) => {
     const redirectUri = process.env.STRAVA_REDIRECT_URI ||
