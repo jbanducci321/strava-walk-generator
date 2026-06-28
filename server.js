@@ -37,6 +37,16 @@ app.use('/api/activity', activityRoutes);
 app.use('/api/download', downloadRoutes);
 app.use('/auth', authRoutes);
 
+// Temporary diagnostic route — remove after confirming env vars are set on Render
+app.get('/debug-env', (req, res) => {
+    res.json({
+        ORS_API_KEY: !!process.env.ORS_API_KEY,
+        STRAVA_CLIENT_ID: !!process.env.STRAVA_CLIENT_ID,
+        DB_USERNAME: !!process.env.DB_USERNAME,
+        PORT: process.env.PORT
+    });
+});
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });

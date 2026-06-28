@@ -47,7 +47,7 @@ function onMapClick(e) {
     }
 }
 
-// Geocode search
+// Geocode search — runs from the browser directly to avoid datacenter IP blocks
 async function searchLocation() {
     const query = document.getElementById('searchInput').value.trim();
     if (!query) return;
@@ -55,16 +55,19 @@ async function searchLocation() {
     setStatus('Searching...', 'text-muted');
 
     try {
-        const res = await fetch(`/api/activity/geocode?query=${encodeURIComponent(query)}`);
+        const res = await fetch(
+            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`,
+            { headers: { 'User-Agent': 'StravaWalkGenerator/1.0' } }
+        );
         const data = await res.json();
 
-        if (!res.ok) {
-            setStatus(data.error || 'Location not found', 'text-danger');
+        if (!data.length) {
+            setStatus('Location not found', 'text-danger');
             return;
         }
 
-        map.setView([data.lat, data.lon], 14);
-        setStatus(`Found: ${data.display_name}`, 'text-success');
+        map.setView([parseFloat(data[0].lat), parseFloat(data[0].lon)], 14);
+        setStatus(`Found: ${data[0].display_name}`, 'text-success');
     } catch (err) {
         setStatus('Search failed', 'text-danger');
     }
