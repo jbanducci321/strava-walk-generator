@@ -28,16 +28,22 @@ async function getValidAccessToken() {
 
     // Refresh if token expires within the next 5 minutes
     if (tokens.expires_at - nowSeconds < 300) {
-        const response = await axios.post('https://www.strava.com/oauth/token', {
-            client_id: process.env.STRAVA_CLIENT_ID,
-            client_secret: process.env.STRAVA_CLIENT_SECRET,
-            grant_type: 'refresh_token',
-            refresh_token: tokens.refresh_token
-        });
+        try {
+            const response = await axios.post('https://www.strava.com/oauth/token', {
+                client_id: process.env.STRAVA_CLIENT_ID,
+                client_secret: process.env.STRAVA_CLIENT_SECRET,
+                grant_type: 'refresh_token',
+                refresh_token: tokens.refresh_token
+            });
 
-        const { access_token, refresh_token, expires_at } = response.data;
-        await saveTokens(access_token, refresh_token, expires_at);
-        return access_token;
+            const { access_token, refresh_token, expires_at } = response.data;
+            await saveTokens(access_token, refresh_token, expires_at);
+            return access_token;
+        } catch (err) {
+            const detail = err.response?.data || err.message;
+            console.error('Token refresh failed:', detail);
+            throw new Error(`Token refresh failed: ${JSON.stringify(detail)}`);
+        }
     }
 
     return tokens.access_token;

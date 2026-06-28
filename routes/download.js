@@ -156,8 +156,9 @@ router.post('/upload-strava', async (req, res) => {
             strava_url: activityId ? `https://www.strava.com/activities/${activityId}` : null
         });
     } catch (err) {
-        console.error('Strava upload error:', err.response?.data || err.message);
-        res.status(500).json({ error: 'Failed to upload to Strava' });
+        const detail = err.response?.data || err.message;
+        console.error('Strava upload error:', detail);
+        res.status(500).json({ error: 'Failed to upload to Strava', detail });
     }
 });
 
