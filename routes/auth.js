@@ -69,6 +69,25 @@ router.get('/callback', async (req, res) => {
     }
 });
 
+// One-time seed: loads tokens from .env directly into the DB
+// Visit /auth/seed once after deploy, then this route does nothing further
+router.get('/seed', async (req, res) => {
+    const accessToken = process.env.STRAVA_ACCESS_TOKEN;
+    const refreshToken = process.env.STRAVA_REFRESH_TOKEN;
+
+    if (!accessToken || !refreshToken) {
+        return res.status(400).json({ error: 'STRAVA_ACCESS_TOKEN or STRAVA_REFRESH_TOKEN not set in env' });
+    }
+
+    try {
+        // Set expires_at to 0 so the refresh logic kicks in on first upload attempt
+        await saveTokens(accessToken, refreshToken, 0);
+        res.json({ success: true, message: 'Tokens seeded. Strava is now connected.' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Check if Strava is currently connected
 router.get('/status', async (req, res) => {
     try {
