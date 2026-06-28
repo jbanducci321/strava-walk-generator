@@ -42,6 +42,7 @@ app.get('/debug-env', (req, res) => {
     res.json({
         ORS_API_KEY: !!process.env.ORS_API_KEY,
         STRAVA_CLIENT_ID: !!process.env.STRAVA_CLIENT_ID,
+        STRAVA_REDIRECT_URI: process.env.STRAVA_REDIRECT_URI || 'NOT SET',
         DB_USERNAME: !!process.env.DB_USERNAME,
         PORT: process.env.PORT
     });

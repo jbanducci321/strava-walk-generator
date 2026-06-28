@@ -5,10 +5,13 @@ const { saveTokens, getTokens } = require('../utils/strava');
 
 // Redirect user to Strava to authorize
 router.get('/strava', (req, res) => {
+    const redirectUri = process.env.STRAVA_REDIRECT_URI ||
+        `${req.protocol}://${req.get('host')}/auth/callback`;
+
     const params = new URLSearchParams({
         client_id: process.env.STRAVA_CLIENT_ID,
         response_type: 'code',
-        redirect_uri: process.env.STRAVA_REDIRECT_URI,
+        redirect_uri: redirectUri,
         approval_prompt: 'auto',
         scope: 'activity:write,read'
     });
@@ -25,11 +28,15 @@ router.get('/callback', async (req, res) => {
     }
 
     try {
+        const redirectUri = process.env.STRAVA_REDIRECT_URI ||
+            `${req.protocol}://${req.get('host')}/auth/callback`;
+
         const response = await axios.post('https://www.strava.com/oauth/token', {
             client_id: process.env.STRAVA_CLIENT_ID,
             client_secret: process.env.STRAVA_CLIENT_SECRET,
             code,
-            grant_type: 'authorization_code'
+            grant_type: 'authorization_code',
+            redirect_uri: redirectUri
         });
 
         const { access_token, refresh_token, expires_at, athlete } = response.data;
