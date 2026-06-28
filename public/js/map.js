@@ -390,6 +390,31 @@ async function checkStravaStatus() {
     }
 }
 
+// Recalculate and display pace whenever duration changes
+function updatePace() {
+    if (!currentDistanceKm) return;
+
+    const hours = parseInt(document.getElementById('durationHours').value) || 0;
+    const minutes = parseInt(document.getElementById('durationMinutes').value) || 0;
+    const seconds = parseInt(document.getElementById('durationSeconds').value) || 0;
+    const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
+
+    if (totalSeconds <= 0) {
+        document.getElementById('paceDisplay').classList.add('d-none');
+        return;
+    }
+
+    const distanceMi = currentDistanceKm * 0.621371;
+    const secondsPerMile = totalSeconds / distanceMi;
+    const paceMinutes = Math.floor(secondsPerMile / 60);
+    const paceSeconds = Math.round(secondsPerMile % 60).toString().padStart(2, '0');
+    const speedMph = (distanceMi / (totalSeconds / 3600)).toFixed(2);
+
+    document.getElementById('paceMile').textContent = `${paceMinutes}:${paceSeconds} / mi`;
+    document.getElementById('speedMph').textContent = `${speedMph} mph`;
+    document.getElementById('paceDisplay').classList.remove('d-none');
+}
+
 function setStatus(msg, cssClass) {
     const el = document.getElementById('statusMsg');
     el.className = cssClass;
@@ -404,6 +429,9 @@ document.getElementById('searchInput').addEventListener('keydown', e => {
 document.getElementById('snapBtn').addEventListener('click', snapToRoads);
 document.getElementById('clearBtn').addEventListener('click', clearRoute);
 document.getElementById('saveRouteBtn').addEventListener('click', saveRoute);
+['durationHours', 'durationMinutes', 'durationSeconds'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updatePace);
+});
 document.getElementById('downloadBtn').addEventListener('click', downloadGpx);
 document.getElementById('uploadStravaBtn').addEventListener('click', uploadToStrava);
 document.getElementById('disconnectBtn').addEventListener('click', async () => {
