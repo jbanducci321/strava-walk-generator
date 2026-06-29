@@ -390,7 +390,15 @@ async function checkStravaStatus() {
     }
 }
 
-// Recalculate and display pace whenever duration changes
+function formatTime(totalSeconds) {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = Math.round(totalSeconds % 60).toString().padStart(2, '0');
+    if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${s}`;
+    return `${m}:${s}`;
+}
+
+// Recalculate pace and splits whenever duration changes
 function updatePace() {
     if (!currentDistanceKm) return;
 
@@ -401,6 +409,7 @@ function updatePace() {
 
     if (totalSeconds <= 0) {
         document.getElementById('paceDisplay').classList.add('d-none');
+        document.getElementById('splitsDisplay').classList.add('d-none');
         return;
     }
 
@@ -413,6 +422,30 @@ function updatePace() {
     document.getElementById('paceMile').textContent = `${paceMinutes}:${paceSeconds} / mi`;
     document.getElementById('speedMph').textContent = `${speedMph} mph`;
     document.getElementById('paceDisplay').classList.remove('d-none');
+
+    // Build splits table — one row per full mile, plus a partial last mile
+    const fullMiles = Math.floor(distanceMi);
+    const remainder = distanceMi - fullMiles;
+    const tbody = document.getElementById('splitsBody');
+    tbody.innerHTML = '';
+
+    let elapsed = 0;
+    for (let i = 1; i <= fullMiles; i++) {
+        elapsed += secondsPerMile;
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>Mile ${i}</td><td>${paceMinutes}:${paceSeconds}</td><td>${formatTime(elapsed)}</td>`;
+        tbody.appendChild(row);
+    }
+
+    if (remainder > 0.01) {
+        const partialSeconds = secondsPerMile * remainder;
+        elapsed += partialSeconds;
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${remainder.toFixed(2)} mi</td><td>${formatTime(partialSeconds)}</td><td>${formatTime(elapsed)}</td>`;
+        tbody.appendChild(row);
+    }
+
+    document.getElementById('splitsDisplay').classList.remove('d-none');
 }
 
 function setStatus(msg, cssClass) {
