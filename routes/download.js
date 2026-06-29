@@ -6,6 +6,22 @@ const pool = require('../utils/db');
 const { buildGpx } = require('../utils/gpx');
 const { getValidAccessToken } = require('../utils/strava');
 
+// Preview GPX as plain text for debugging — paste output into gpxstudio.io to inspect
+router.post('/preview-gpx', (req, res) => {
+    const { coordinates, name, sport_type, start_time, duration_seconds } = req.body;
+    if (!coordinates || !start_time || !duration_seconds) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+    const gpx = buildGpx(coordinates, {
+        name: name || 'Preview',
+        sportType: sport_type || 'Walk',
+        startTime: start_time,
+        durationSeconds: parseInt(duration_seconds)
+    });
+    res.setHeader('Content-Type', 'text/plain');
+    res.send(gpx);
+});
+
 // Generate and download a GPX file
 router.post('/gpx', async (req, res) => {
     const { coordinates, name, sport_type, start_time, duration_seconds, route_id } = req.body;

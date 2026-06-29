@@ -1,17 +1,56 @@
+function haversineMeters(a, b) {
+    const R = 6371000;
+    const toRad = d => d * Math.PI / 180;
+    const dLat = toRad(b[0] - a[0]);
+    const dLon = toRad(b[1] - a[1]);
+    const h = Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(a[0])) * Math.cos(toRad(b[0])) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function interpolateCoord(a, b, t) {
+    return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+}
+
+// Sample numPoints coords evenly spaced by distance along the route.
+// This guarantees constant implied speed between every consecutive pair of
+// points, so Strava sees no "stationary" segments to drop from moving time.
+function sampleByDistance(coords, numPoints) {
+    const cumDist = [0];
+    for (let i = 1; i < coords.length; i++) {
+        cumDist.push(cumDist[i - 1] + haversineMeters(coords[i - 1], coords[i]));
+    }
+    const totalDist = cumDist[cumDist.length - 1];
+
+    if (totalDist === 0) {
+        return coords.slice(0, numPoints);
+    }
+
+    const result = [];
+    for (let i = 0; i < numPoints; i++) {
+        const targetDist = (i / (numPoints - 1)) * totalDist;
+
+        let segIdx = 0;
+        while (segIdx < cumDist.length - 2 && cumDist[segIdx + 1] < targetDist) {
+            segIdx++;
+        }
+
+        const segLen = cumDist[segIdx + 1] - cumDist[segIdx];
+        const t = segLen > 0 ? (targetDist - cumDist[segIdx]) / segLen : 0;
+        result.push(interpolateCoord(coords[segIdx], coords[segIdx + 1], t));
+    }
+
+    return result;
+}
+
 // Builds a GPX XML string from route coordinates and activity details
 function buildGpx(coords, details) {
     const { name, sportType, startTime, durationSeconds } = details;
 
     const start = new Date(startTime);
 
-    // Sample 100 evenly-spaced points from the route
-    const POINT_COUNT = 100;
-    const sampled = [];
-    for (let i = 0; i < POINT_COUNT; i++) {
-        const index = Math.round(i * (coords.length - 1) / (POINT_COUNT - 1));
-        sampled.push(coords[index]);
-    }
-
+    // 200 points evenly spaced by distance — constant implied speed throughout
+    const sampled = sampleByDistance(coords, 200);
     const msPerPoint = (durationSeconds * 1000) / (sampled.length - 1);
 
     const trackPoints = sampled.map((coord, i) => {
