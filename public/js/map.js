@@ -379,6 +379,7 @@ async function checkStravaStatus() {
         if (data.connected) {
             document.getElementById('stravaConnected').classList.remove('d-none');
             document.getElementById('stravaDisconnected').classList.add('d-none');
+            document.getElementById('athleteName').textContent = data.athlete_name || 'Strava';
             document.getElementById('uploadStravaBtn').classList.remove('d-none');
         } else {
             document.getElementById('stravaConnected').classList.add('d-none');

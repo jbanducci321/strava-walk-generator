@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const session = require('express-session');
 const cors = require('cors');
 const path = require('path');
 
@@ -14,22 +15,15 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Basic auth password gate
-app.use((req, res, next) => {
-    const authHeader = req.headers['authorization'];
-
-    if (authHeader) {
-        const base64 = authHeader.split(' ')[1];
-        const [username, password] = Buffer.from(base64, 'base64').toString().split(':');
-
-        if (username === process.env.APP_USERNAME && password === process.env.APP_PASSWORD) {
-            return next();
-        }
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
     }
-
-    res.set('WWW-Authenticate', 'Basic realm="Strava Walk Generator"');
-    res.status(401).send('Unauthorized');
-});
+}));
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -37,7 +31,6 @@ app.use('/api/activity', activityRoutes);
 app.use('/api/download', downloadRoutes);
 app.use('/auth', authRoutes);
 
-// Temporary diagnostic route — remove after confirming env vars are set on Render
 app.get('/debug-env', (req, res) => {
     res.json({
         ORS_API_KEY: !!process.env.ORS_API_KEY,

@@ -26,11 +26,12 @@
             <!-- Strava connection status -->
             <div id="stravaStatus" class="mb-3">
                 <div id="stravaConnected" class="d-none alert alert-success py-1 px-2 small mb-1">
-                    Strava connected
+                    Connected as <strong id="athleteName"></strong>
                     <button class="btn btn-sm btn-link text-danger p-0 ms-2" id="disconnectBtn">Disconnect</button>
                 </div>
                 <div id="stravaDisconnected" class="d-none">
                     <a href="/auth/strava" class="btn btn-sm btn-outline-warning w-100">Connect Strava Account</a>
+                    <small class="text-muted d-block mt-1">Connect to upload activities directly to your Strava.</small>
                 </div>
             </div>
 

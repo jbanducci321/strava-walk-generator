@@ -1,26 +1,6 @@
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
-const { saveTokens, getTokens } = require('../utils/strava');
-
-// Temporary: show the OAuth URL instead of redirecting so we can verify it
-router.get('/strava-debug', (req, res) => {
-    const redirectUri = process.env.STRAVA_REDIRECT_URI ||
-        `${req.protocol}://${req.get('host')}/auth/callback`;
-
-    const params = new URLSearchParams({
-        client_id: process.env.STRAVA_CLIENT_ID,
-        response_type: 'code',
-        redirect_uri: redirectUri,
-        approval_prompt: 'auto',
-        scope: 'activity:write,read'
-    });
-
-    res.json({
-        redirect_uri_being_sent: redirectUri,
-        full_oauth_url: `https://www.strava.com/oauth/authorize?${params}`
-    });
-});
 
 // Redirect user to Strava to authorize
 router.get('/strava', (req, res) => {
@@ -38,7 +18,7 @@ router.get('/strava', (req, res) => {
     res.redirect(`https://www.strava.com/oauth/authorize?${params}`);
 });
 
-// Strava redirects back here with a code
+// Strava redirects back here with a code — save tokens to session, not DB
 router.get('/callback', async (req, res) => {
     const { code, error } = req.query;
 
@@ -59,7 +39,14 @@ router.get('/callback', async (req, res) => {
         });
 
         const { access_token, refresh_token, expires_at, athlete } = response.data;
-        await saveTokens(access_token, refresh_token, expires_at);
+
+        // Store tokens in this user's session — isolated per visitor
+        req.session.strava = {
+            access_token,
+            refresh_token,
+            expires_at,
+            athlete_name: `${athlete.firstname} ${athlete.lastname}`
+        };
 
         console.log(`Strava connected for athlete: ${athlete.firstname} ${athlete.lastname}`);
         res.redirect('/?connected=1');
@@ -69,39 +56,18 @@ router.get('/callback', async (req, res) => {
     }
 });
 
-// One-time seed: loads tokens from .env directly into the DB
-// Visit /auth/seed once after deploy, then this route does nothing further
-router.get('/seed', async (req, res) => {
-    const accessToken = process.env.STRAVA_ACCESS_TOKEN;
-    const refreshToken = process.env.STRAVA_REFRESH_TOKEN;
-
-    if (!accessToken || !refreshToken) {
-        return res.status(400).json({ error: 'STRAVA_ACCESS_TOKEN or STRAVA_REFRESH_TOKEN not set in env' });
-    }
-
-    try {
-        // Set expires_at to 0 so the refresh logic kicks in on first upload attempt
-        await saveTokens(accessToken, refreshToken, 0);
-        res.json({ success: true, message: 'Tokens seeded. Strava is now connected.' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+// Check if current session has Strava connected
+router.get('/status', (req, res) => {
+    const strava = req.session.strava;
+    res.json({
+        connected: !!strava,
+        athlete_name: strava?.athlete_name || null
+    });
 });
 
-// Check if Strava is currently connected
-router.get('/status', async (req, res) => {
-    try {
-        const tokens = await getTokens();
-        res.json({ connected: !!tokens });
-    } catch (err) {
-        res.json({ connected: false });
-    }
-});
-
-// Disconnect Strava (removes stored tokens)
-router.post('/disconnect', async (req, res) => {
-    const pool = require('../utils/db');
-    await pool.query('DELETE FROM strava_tokens');
+// Disconnect — just clear this session's tokens
+router.post('/disconnect', (req, res) => {
+    req.session.strava = null;
     res.json({ message: 'Disconnected' });
 });
 

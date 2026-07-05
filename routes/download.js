@@ -4,7 +4,6 @@ const FormData = require('form-data');
 const router = express.Router();
 const pool = require('../utils/db');
 const { buildGpx } = require('../utils/gpx');
-const { getValidAccessToken } = require('../utils/strava');
 
 // Preview GPX as plain text for debugging — paste output into gpxstudio.io to inspect
 router.post('/preview-gpx', (req, res) => {
@@ -77,6 +76,35 @@ router.post('/gpx', async (req, res) => {
     }
 });
 
+// Get a valid access token from the session, refreshing if expired
+async function getSessionAccessToken(session) {
+    const strava = session.strava;
+
+    if (!strava) {
+        throw new Error('Not connected to Strava. Please connect your account first.');
+    }
+
+    const nowSeconds = Math.floor(Date.now() / 1000);
+
+    if (strava.expires_at - nowSeconds < 300) {
+        const response = await axios.post('https://www.strava.com/oauth/token', {
+            client_id: process.env.STRAVA_CLIENT_ID,
+            client_secret: process.env.STRAVA_CLIENT_SECRET,
+            grant_type: 'refresh_token',
+            refresh_token: strava.refresh_token
+        });
+
+        session.strava = {
+            ...strava,
+            access_token: response.data.access_token,
+            refresh_token: response.data.refresh_token,
+            expires_at: response.data.expires_at
+        };
+    }
+
+    return session.strava.access_token;
+}
+
 // Upload activity directly to Strava
 router.post('/upload-strava', async (req, res) => {
     const { coordinates, name, sport_type, start_time, duration_seconds, distance_km, route_id } = req.body;
@@ -89,8 +117,12 @@ router.post('/upload-strava', async (req, res) => {
         return res.status(400).json({ error: 'Start time and duration are required' });
     }
 
+    if (!req.session.strava) {
+        return res.status(401).json({ error: 'Please connect your Strava account first.' });
+    }
+
     try {
-        const accessToken = await getValidAccessToken();
+        const accessToken = await getSessionAccessToken(req.session);
 
         const gpx = buildGpx(coordinates, {
             name: name || 'My Walk',
